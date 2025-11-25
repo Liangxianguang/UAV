@@ -1,0 +1,12 @@
+BoT-SORT/datasets/train/*
+BoT-SORT/runs/*
+*.pyc
+*.jpg
+*.png
+*.txt
+*.mp4
+*.whl
+*.json
+*.avi
+*.pth
+BoT-SORT/yolov12/*.whl.*

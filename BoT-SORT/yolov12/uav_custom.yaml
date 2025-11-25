@@ -1,0 +1,4 @@
+train: D:\UAV\YOLOv12-BoT-SORT-ReID\data\uav_custom\images\train
+val: D:\UAV\YOLOv12-BoT-SORT-ReID\data\uav_custom\images\val
+nc: 1
+names: ['UAV']

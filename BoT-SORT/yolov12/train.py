@@ -30,6 +30,11 @@ def parse_opt(known=False):
     parser.add_argument('--single_cls', type=bool, default=True, help='Single class or not')
     parser.add_argument('--n_worker', type=int, default=8, help='Number of workers')
     parser.add_argument('--save_path', type=str, default='./runs/uav', help='Save path')
+    parser.add_argument('--lr0', type=float, default=0.01, help='Initial learning rate')
+    parser.add_argument('--lrf', type=float, default=0.01, help='Final learning rate')
+    parser.add_argument('--mosaic', type=float, default=1.0, help='Mosaic augmentation ratio')
+    parser.add_argument('--mixup', type=float, default=0.0, help='Mixup augmentation ratio')
+    parser.add_argument('--augment', type=bool, default=True, help='Enable data augmentation')
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
 def make_temp_yaml_with_absolute_paths(yaml_path):
@@ -63,7 +68,13 @@ if __name__ == '__main__':
         device=0,
         workers=opt.n_worker,
         project=opt.save_path,
-        single_cls=opt.single_cls
+        single_cls=opt.single_cls,
+        lr0=opt.lr0,
+        lrf=opt.lrf,
+        mosaic=opt.mosaic,
+        mixup=opt.mixup,
+        augment=opt.augment,
+        close_mosaic=10
     )
 
     # Optional cleanup

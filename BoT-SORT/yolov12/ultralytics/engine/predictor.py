@@ -342,6 +342,7 @@ class BasePredictor:
         if self.args.save or self.args.show:
             self.plotted_img = result.plot(
                 line_width=self.args.line_width,
+                font_size=getattr(self.args, "font_size", None),
                 boxes=self.args.show_boxes,
                 conf=self.args.show_conf,
                 labels=self.args.show_labels,
