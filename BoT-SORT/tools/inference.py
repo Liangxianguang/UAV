@@ -612,12 +612,21 @@ def detect(save_img=False):
     ################
     # save file
     ################
-    # Check if foldern has an extension
-    name, ext = os.path.splitext(foldern)
-    if ext:  # If there is a file extension (e.g., '.mp4')
-        base_name = name
-    else:    # If there is no extension
-        base_name = foldern
+    # Extract sequence name from the source path
+    # For paths like "..\data\UAVSwarm-dataset-master\test\UAVSwarm-04\img1"
+    # We want "UAVSwarm-04" as the output filename
+    source_path = Path(opt.source)
+    
+    # Try to get the parent directory name (e.g., "UAVSwarm-04" from "UAVSwarm-04/img1")
+    if source_path.name == 'img1' and source_path.parent.name.startswith('UAVSwarm-'):
+        base_name = source_path.parent.name
+    else:
+        # Fallback to the original logic
+        name, ext = os.path.splitext(foldern)
+        if ext:  # If there is a file extension (e.g., '.mp4')
+            base_name = name
+        else:    # If there is no extension
+            base_name = foldern
 
     answer_file = os.path.join(opt.save_path_answer, f"{base_name}.txt")
 

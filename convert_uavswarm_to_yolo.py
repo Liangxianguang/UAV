@@ -180,11 +180,92 @@ def process_uavswarm_dataset(base_dir, output_train_imgs, output_train_labels, o
 
 # 主程序
 if __name__ == '__main__':
-    base_dir = r"D:\UAV\YOLOv12-BoT-SORT-ReID\data\UAVSwarm-dataset-master"
-    output_train_imgs = r"D:\UAV\YOLOv12-BoT-SORT-ReID\data\uavswarm_yolo\images\train"
-    output_train_labels = r"D:\UAV\YOLOv12-BoT-SORT-ReID\data\uavswarm_yolo\labels\train"
-    output_val_imgs = r"D:\UAV\YOLOv12-BoT-SORT-ReID\data\uavswarm_yolo\images\val"
-    output_val_labels = r"D:\UAV\YOLOv12-BoT-SORT-ReID\data\uavswarm_yolo\labels\val"
+    import argparse
     
-    process_uavswarm_dataset(base_dir, output_train_imgs, output_train_labels, output_val_imgs, output_val_labels)
-    print("UAVSwarm dataset conversion completed!")
+    parser = argparse.ArgumentParser(description='Convert UAVSwarm dataset to YOLO format')
+    parser.add_argument('--base_dir', type=str, 
+                        default=r"D:\UAV\YOLOv12-BoT-SORT-ReID\data\UAVSwarm-dataset-master",
+                        help='Base directory of UAVSwarm dataset')
+    parser.add_argument('--output_dir', type=str,
+                        default=r"D:\UAV\YOLOv12-BoT-SORT-ReID\data\uavswarm_yolo",
+                        help='Output directory for YOLO format dataset')
+    parser.add_argument('--train_split', type=float, default=0.7,
+                        help='Train split ratio (default: 0.7)')
+    parser.add_argument('--mode', type=str, choices=['train', 'test', 'all'], default='all',
+                        help='Process train/test/all sequences')
+    
+    args = parser.parse_args()
+    
+    # 输出路径
+    output_train_imgs = os.path.join(args.output_dir, 'images', 'train')
+    output_train_labels = os.path.join(args.output_dir, 'labels', 'train')
+    output_val_imgs = os.path.join(args.output_dir, 'images', 'val')
+    output_val_labels = os.path.join(args.output_dir, 'labels', 'val')
+    
+    print("\n🚀 UAVSwarm to YOLO Conversion Script")
+    print("="*70)
+    print(f"Base directory: {args.base_dir}")
+    print(f"Output directory: {args.output_dir}")
+    print(f"Mode: {args.mode}")
+    print(f"Train split: {args.train_split:.1%}")
+    print("="*70)
+    
+    # 验证输入目录
+    if not os.path.exists(args.base_dir):
+        print(f"\n❌ Base directory not found: {args.base_dir}")
+        exit(1)
+    
+    # 获取所有序列
+    all_sequences = []
+    
+    if args.mode in ['train', 'all']:
+        train_dir = os.path.join(args.base_dir, 'train')
+        if os.path.exists(train_dir):
+            train_seqs = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+            print(f"\n📂 Found {len(train_seqs)} training sequences")
+            for seq in sorted(train_seqs):
+                seq_path = os.path.join(train_dir, seq)
+                gt_file = os.path.join(seq_path, 'gt', 'gt.txt')
+                img_dir = os.path.join(seq_path, 'img1')
+                if os.path.exists(gt_file) and os.path.exists(img_dir):
+                    all_sequences.append((seq_path, gt_file, img_dir, seq))
+                    print(f"   ✅ {seq}")
+                else:
+                    print(f"   ⚠️  {seq} (missing gt.txt or img1)")
+    
+    if args.mode in ['test', 'all']:
+        test_dir = os.path.join(args.base_dir, 'test')
+        if os.path.exists(test_dir):
+            test_seqs = [d for d in os.listdir(test_dir) if os.path.isdir(os.path.join(test_dir, d))]
+            print(f"\n📂 Found {len(test_seqs)} test sequences")
+            for seq in sorted(test_seqs):
+                seq_path = os.path.join(test_dir, seq)
+                gt_file = os.path.join(seq_path, 'gt', 'gt.txt')
+                img_dir = os.path.join(seq_path, 'img1')
+                if os.path.exists(gt_file) and os.path.exists(img_dir):
+                    all_sequences.append((seq_path, gt_file, img_dir, seq))
+                    print(f"   ✅ {seq}")
+                else:
+                    print(f"   ⚠️  {seq} (missing gt.txt or img1)")
+    
+    if not all_sequences:
+        print("\n❌ No valid sequences found!")
+        exit(1)
+    
+    print(f"\n📊 Total sequences to process: {len(all_sequences)}")
+    
+    # 处理数据集
+    process_uavswarm_dataset(args.base_dir, output_train_imgs, output_train_labels, 
+                             output_val_imgs, output_val_labels)
+    
+    # 统计输出
+    train_img_count = len([f for f in os.listdir(output_train_imgs) if f.endswith(('.jpg', '.png'))]) if os.path.exists(output_train_imgs) else 0
+    val_img_count = len([f for f in os.listdir(output_val_imgs) if f.endswith(('.jpg', '.png'))]) if os.path.exists(output_val_imgs) else 0
+    
+    print("\n" + "="*70)
+    print("✅ UAVSwarm dataset conversion completed!")
+    print("="*70)
+    print(f"📁 Train images: {train_img_count}")
+    print(f"📁 Val images: {val_img_count}")
+    print(f"📁 Total: {train_img_count + val_img_count}")
+    print("="*70)

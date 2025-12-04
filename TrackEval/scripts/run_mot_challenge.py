@@ -78,6 +78,8 @@ if __name__ == '__main__':
     # 兼容：某些字符串路径（如 SEQMAP_FILE）被 argparse 解析为 list，需取第一个元素
     if isinstance(config.get('SEQMAP_FILE', None), (list, tuple)):
         config['SEQMAP_FILE'] = config['SEQMAP_FILE'][0]
+    if isinstance(config.get('OUTPUT_FOLDER', None), (list, tuple)):
+        config['OUTPUT_FOLDER'] = config['OUTPUT_FOLDER'][0]
 
     eval_config = {k: v for k, v in config.items() if k in default_eval_config.keys()}
     dataset_config = {k: v for k, v in config.items() if k in default_dataset_config.keys()}

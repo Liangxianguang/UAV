@@ -12,6 +12,19 @@ def export_video_to_mot_txt(model, source, out_txt, tracker_cfg, imgsz, conf, io
 	每行格式：frame,id,left,top,width,height,conf,-1,-1,-1
 	"""
 	ensure_dir(Path(out_txt).parent)
+	
+	# 打印追踪器配置信息（用于调试）
+	print(f"[DEBUG] tracker_cfg: {tracker_cfg}")
+	print(f"[DEBUG] tracker_cfg type: {type(tracker_cfg)}")
+	print(f"[DEBUG] tracker_cfg absolute path: {Path(tracker_cfg).absolute() if isinstance(tracker_cfg, str) else 'N/A'}")
+	
+	# 验证 tracker_cfg 文件是否存在
+	if isinstance(tracker_cfg, str):
+		if not Path(tracker_cfg).exists():
+			print(f"[警告] 追踪器配置文件不存在: {tracker_cfg}")
+		else:
+			print(f"[DEBUG] 追踪器配置文件存在")
+	
 	with open(out_txt, "w", encoding="utf-8") as f:
 		frame_idx = 0
 		# 调试：打印模型当前设备，并在 CUDA 下设置 benchmark 以提速
@@ -20,25 +33,50 @@ def export_video_to_mot_txt(model, source, out_txt, tracker_cfg, imgsz, conf, io
 			print(f"[DEBUG] export_mot: 模型参数设备: {pdev}")
 		except Exception as e:
 			print(f"[WARN] export_mot: 无法读取模型参数设备: {e}")
+		
+		# 确保模型被转移到正确的设备
 		if isinstance(device, str) and device.startswith("cuda") and torch.cuda.is_available():
 			try:
 				cuda_index = 0 if device in ("cuda", "cuda:0") else int(device.split(":")[1]) if ":" in device else int(device)
 				torch.cuda.set_device(cuda_index)
 				print(f"[DEBUG] export_mot: 已设置当前 CUDA 设备为 {torch.cuda.current_device()}")
 				torch.backends.cudnn.benchmark = True
+				# 显式将模型转到 GPU
+				model.to("cuda")
+				print(f"[DEBUG] export_mot: 已将模型转到 GPU")
 			except Exception as e:
 				print(f"[WARN] export_mot: 设置 CUDA 设备失败: {e}")
-		gen = model.track(
-			source=source,
-			stream=True,
-			imgsz=imgsz,
-			conf=conf,
-			iou=iou,
-			device=device,
-			tracker=tracker_cfg,
-			verbose=False,
-			persist=False,
-		)
+				device = "cpu"
+				print(f"[WARN] export_mot: 回退到 CPU")
+		
+		try:
+			gen = model.track(
+				source=source,
+				stream=True,
+				imgsz=imgsz,
+				conf=conf,
+				iou=iou,
+				device=device,
+				tracker=tracker_cfg,
+				verbose=False,
+				persist=False,
+			)
+		except AttributeError as e:
+			print(f"[ERROR] export_mot: 模型结构兼容性错误: {e}")
+			print(f"[ERROR] export_mot: 尝试重新加载模型...")
+			# 这个错误通常是由于模型缓存不一致，尝试重新加载
+			model.reset_callbacks()
+			gen = model.track(
+				source=source,
+				stream=True,
+				imgsz=imgsz,
+				conf=conf,
+				iou=iou,
+				device=device,
+				tracker=tracker_cfg,
+				verbose=False,
+				persist=False,
+			)
 		for r in gen:
 			frame_idx += 1
 			# 仅在首帧打印一次速度与显存情况，帮助确认 GPU 是否参与推理
